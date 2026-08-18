@@ -1,4 +1,4 @@
-const { useState, useCallback } = React;
+const { useState, useCallback, useEffect } = React;
 
 // 全国図鑑の世代・地方の枠組み(名前データは世代ごとに順次追加していく)
 const GENERATIONS = [
@@ -8,9 +8,9 @@ const GENERATIONS = [
   { gen: 4, region: "シンオウ", start: 387, end: 493, theme: "ds", count: 107, repSlots: 3 },
   { gen: 5, region: "イッシュ", start: 494, end: 649, theme: "ds", count: 156, repSlots: 5 },
   { gen: 6, region: "カロス", start: 650, end: 721, theme: "3ds", count: 72, repSlots: 2 },
-  { gen: 7, region: "アローラ", start: 722, end: 809, theme: "3ds", count: 88, repSlots: 3 },
-  { gen: 8, region: "ガラル", start: 810, end: 905, theme: "switch", count: 96, repSlots: 3 },
-  { gen: 9, region: "パルデア", start: 906, end: 1025, theme: "switch", count: 120, repSlots: 4 },
+  { gen: 7, region: "アローラ", start: 722, end: 809, theme: "3ds", count: 88 + 18, repSlots: 3 },
+  { gen: 8, region: "ガラル", start: 810, end: 905, theme: "switch", count: 96 + 3, repSlots: 3 },
+  { gen: 9, region: "パルデア", start: 906, end: 1025, theme: "switch", count: 120 + 4, repSlots: 4 },
 ];
 
 const GEN1 = [
@@ -174,6 +174,17 @@ const GEN9 = [
   img: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`,
 }));
 
+// パルデアのすがた(カントー/ジョウトのポケモンの別フォルム)
+const GEN9_PALDEA = [
+  [10250,"パルデアケンタロス(コンバット種)"],[10251,"パルデアケンタロス(ブレイズ種)"],
+  [10252,"パルデアケンタロス(ウォーター種)"],[10253,"パルデアウパー"],
+].map(([id, name]) => ({
+  id,
+  name,
+  img: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`,
+}));
+GEN9.push(...GEN9_PALDEA);
+
 const GEN5 = [
   [494,"ビクティニ"],[495,"ツタージャ"],[496,"ジャノビー"],[497,"ジャローダ"],[498,"ポカブ"],
   [499,"チャオブー"],[500,"エンブオー"],[501,"ミジュマル"],[502,"フタチマル"],[503,"ダイケンキ"],
@@ -260,6 +271,21 @@ const GEN7 = [
   img: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`,
 }));
 
+// アローラのすがた(カントー地方のポケモンの別フォルム。PokeAPIの別フォルム専用IDを使う)
+const GEN7_ALOLA = [
+  [10091,"アローラコラッタ"],[10092,"アローララッタ"],[10100,"アローラライチュウ"],
+  [10101,"アローラサンド"],[10102,"アローラサンドパン"],[10103,"アローラロコン"],
+  [10104,"アローラキュウコン"],[10105,"アローラディグダ"],[10106,"アローラダグトリオ"],
+  [10107,"アローラニャース"],[10108,"アローラペルシアン"],[10109,"アローライシツブテ"],
+  [10110,"アローラゴローン"],[10111,"アローラゴローニャ"],[10112,"アローラベトベター"],
+  [10113,"アローラベトベトン"],[10114,"アローラナッシー"],[10115,"アローラガラガラ"],
+].map(([id, name]) => ({
+  id,
+  name,
+  img: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`,
+}));
+GEN7.push(...GEN7_ALOLA);
+
 const GEN8 = [
   [810,"サルノリ"],[811,"バチンキー"],[812,"ゴリランダー"],[813,"ヒバニー"],[814,"ラビフット"],
   [815,"エースバーン"],[816,"メッソン"],[817,"ジメレオン"],[818,"インテレオン"],[819,"ホシガリス"],
@@ -286,6 +312,16 @@ const GEN8 = [
   name,
   img: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`,
 }));
+
+// ガラルのすがた(カントー地方の伝説の鳥の別フォルム)
+const GEN8_GALAR = [
+  [10169,"ガラルフリーザー"],[10170,"ガラルサンダー"],[10171,"ガラルファイヤー"],
+].map(([id, name]) => ({
+  id,
+  name,
+  img: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`,
+}));
+GEN8.push(...GEN8_GALAR);
 
 // 第一世代: 後の世代で進化先が追加されたポケモン(オコリザル→コノヨザル、
 // ゴルバット→クロバット等)は除外して更新
@@ -334,6 +370,9 @@ const FINAL_IDS_GEN7 = new Set([
   724,727,730,733,735,738,740,741,743,745,746,748,750,752,754,756,758,760,763,
   764,765,766,768,770,771,773,774,775,776,777,778,779,780,781,784,785,786,787,
   788,791,792,793,794,795,796,797,798,799,800,801,802,804,805,806,807,809,
+  // アローラのすがた: 最終進化系のみ(ラッタ/ライチュウ/サンドパン/キュウコン/ダグトリオ/
+  // ペルシアン/ゴローニャ/ベトベトン/ナッシー/ガラガラ)
+  10092,10100,10102,10104,10106,10108,10111,10113,10114,10115,
 ]);
 
 const FINAL_IDS_GEN8 = new Set([
@@ -341,6 +380,8 @@ const FINAL_IDS_GEN8 = new Set([
   853,855,858,861,862,863,864,865,866,867,869,870,871,873,874,875,876,877,879,
   880,881,882,883,887,888,889,890,892,893,894,895,896,897,898,899,900,901,902,
   903,904,905,
+  // ガラルのすがた: 進化しない単体なので最終扱い
+  10169,10170,10171,
 ]);
 
 const FINAL_IDS_GEN9 = new Set([
@@ -349,6 +390,9 @@ const FINAL_IDS_GEN9 = new Set([
   979,980,981,982,983,984,985,986,987,988,989,990,991,992,993,994,995,998,
   1000,1001,1002,1003,1004,1005,1006,1007,1008,1009,1010,1013,1014,1015,1016,
   1017,1018,1019,1020,1021,1022,1023,1024,1025,
+  // パルデアのすがた: ケンタロス3種は進化しないので最終扱い。
+  // パルデアウパーはドオー(980)に進化するので対象外
+  10250,10251,10252,
 ]);
 
 const FINAL_IDS_BY_GEN = {
@@ -368,18 +412,11 @@ function shuffle(arr) {
 
 const pad3 = (id) => String(id).padStart(3, "0");
 
-// 通常フォルムと一緒に小さく表示したい別フォルム(ガラルのすがた等)
-// 画像ファイルは images/<altKey>.png として配置する
-const ALT_FORMS = {
-  144: { key: "144-galar", label: "ガラルのすがた" },
-  145: { key: "145-galar", label: "ガラルのすがた" },
-  146: { key: "146-galar", label: "ガラルのすがた" },
-};
-
-const ALT_IMG_SOURCES = (altKey) => [`${altKey}.png`];
-
+// PokeAPI(CDN)基準の画像のみを使う方針。
+// IMG_SOURCESは通常フォルム、ALT_FORMSは同じカードに小さく重ねて出す別フォルム
+// (メガシンカ・アローラのすがた・ガラルのすがた)。
+// キーはPokeAPI内部の別フォルム専用ID(pokemon.csvのid列)。
 const IMG_SOURCES = (id) => [
-  `${pad3(id)}.png`,
   `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`,
   `https://cdn.jsdelivr.net/gh/PokeAPI/sprites/sprites/pokemon/other/official-artwork/${id}.png`,
   `https://assets.pokemon.com/assets/cms2/img/pokedex/full/${pad3(id)}.png`,
@@ -389,11 +426,34 @@ const IMG_SOURCES = (id) => [
   `https://cdn.jsdelivr.net/gh/PokeAPI/sprites/sprites/pokemon/${id}.png`,
 ];
 
+// メガシンカのみ、通常フォルムのカードに小さく重ねて表示する。
+// アローラのすがた・ガラルのすがたはGEN7/GEN8にそれぞれ独立した1匹として追加済み。
+const ALT_FORMS = {
+  3: { formId: 10033, label: "メガシンカ" },     // venusaur-mega
+  6: { formId: 10034, label: "メガシンカ" },     // charizard-mega-x
+  9: { formId: 10036, label: "メガシンカ" },     // blastoise-mega
+  15: { formId: 10090, label: "メガシンカ" },    // beedrill-mega
+  18: { formId: 10073, label: "メガシンカ" },    // pidgeot-mega
+  65: { formId: 10037, label: "メガシンカ" },    // alakazam-mega
+  80: { formId: 10071, label: "メガシンカ" },    // slowbro-mega
+  94: { formId: 10038, label: "メガシンカ" },    // gengar-mega
+  115: { formId: 10039, label: "メガシンカ" },   // kangaskhan-mega
+  127: { formId: 10040, label: "メガシンカ" },   // pinsir-mega
+  130: { formId: 10041, label: "メガシンカ" },   // gyarados-mega
+  142: { formId: 10042, label: "メガシンカ" },   // aerodactyl-mega
+  150: { formId: 10043, label: "メガシンカ" },   // mewtwo-mega-x
+};
+
+const ALT_IMG_SOURCES = (formId) => [
+  `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${formId}.png`,
+  `https://cdn.jsdelivr.net/gh/PokeAPI/sprites/sprites/pokemon/other/official-artwork/${formId}.png`,
+];
+
 function AltFormBadge({ mon, size = 40 }) {
   const alt = ALT_FORMS[mon.id];
   const [srcIndex, setSrcIndex] = useState(0);
   if (!alt) return null;
-  const sources = ALT_IMG_SOURCES(alt.key);
+  const sources = ALT_IMG_SOURCES(alt.formId);
   if (srcIndex >= sources.length) return null;
   return (
     <img
@@ -408,12 +468,22 @@ function AltFormBadge({ mon, size = 40 }) {
   );
 }
 
-function PokemonCard({ mon, onPick }) {
+function PokemonCard({ mon, onPick, selected, onToggle }) {
   const [srcIndex, setSrcIndex] = useState(0);
   const sources = IMG_SOURCES(mon.id);
   const broken = srcIndex >= sources.length;
+  const handleClick = () => {
+    if (onToggle) {
+      onToggle(mon);
+    } else if (onPick) {
+      onPick(mon);
+    }
+  };
   return (
-    <button onClick={() => onPick(mon)} className="lcd-card">
+    <button
+      onClick={handleClick}
+      className={`lcd-card${selected ? " lcd-card-selected" : ""}`}
+    >
       <div className="lcd-card-imgwrap">
         {!broken ? (
           <img
@@ -426,6 +496,7 @@ function PokemonCard({ mon, onPick }) {
           <div className="lcd-fallback">?</div>
         )}
         <AltFormBadge mon={mon} size={36} />
+        {selected && <div className="lcd-card-check">✓</div>}
       </div>
       <div className="lcd-card-name">{mon.name}</div>
     </button>
@@ -453,7 +524,8 @@ function ResultImage({ mon }) {
   );
 }
 
-const GROUP_SIZE = 3;
+const GROUP_SIZE = 4;
+const MAX_PICKS = 2; // 1回に勝ち進ませられる最大数
 const RANKING_LIMIT = 20;
 
 const POKEMON_BY_GEN = {
@@ -474,6 +546,7 @@ function App() {
   const [history, setHistory] = useState([]);
   const [mode, setMode] = useState("all"); // all | final
   const [selectedGen, setSelectedGen] = useState(1);
+  const [pickedIds, setPickedIds] = useState([]); // このラウンドで選択中のID(最大MAX_PICKS)
 
   const ranking = winner
     ? [
@@ -499,15 +572,92 @@ function App() {
   const [wcChampion, setWcChampion] = useState(null);
   const [wcRoundLabel, setWcRoundLabel] = useState("");
 
-  const loadWcStatus = useCallback(async () => {
+  // ===== 保存(localStorage) =====
+  // window.storage はClaudeのアーティファクトプレビュー専用APIで、
+  // 実際に公開したサイト上では使えないため、標準のlocalStorageを使う。
+  const lsGet = (key) => {
+    try {
+      const raw = window.localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
+  };
+  const lsSet = (key, value) => {
+    try {
+      window.localStorage.setItem(key, JSON.stringify(value));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
+  const lsRemove = (key) => {
+    try {
+      window.localStorage.removeItem(key);
+    } catch (e) {
+      // 何もできないので無視
+    }
+  };
+
+  const SAVE_KEY = "pokezukan_save_v1";
+  const [hasSavedGame, setHasSavedGame] = useState(false);
+  const [saveNotice, setSaveNotice] = useState("");
+
+  useEffect(() => {
+    setHasSavedGame(!!lsGet(SAVE_KEY));
+  }, []);
+
+  const saveProgress = () => {
+    const ok = lsSet(SAVE_KEY, {
+      phase: "battle",
+      currentRound,
+      winners,
+      deferred,
+      eliminated,
+      index,
+      roundNum,
+      mode,
+      selectedGen,
+      savedAt: Date.now(),
+    });
+    setHasSavedGame(ok);
+    setSaveNotice(ok ? "保存したよ。タイトルから続きを再開できる" : "保存に失敗したよ");
+    setTimeout(() => setSaveNotice(""), 2000);
+  };
+
+  const saveAndGoTitle = () => {
+    saveProgress();
+    setWcActiveGen(null);
+    setWinner(null);
+    setPhase("title");
+  };
+
+  const resumeProgress = () => {
+    const saved = lsGet(SAVE_KEY);
+    if (!saved) return;
+    setCurrentRound(saved.currentRound || []);
+    setWinners(saved.winners || []);
+    setDeferred(saved.deferred || []);
+    setEliminated(saved.eliminated || []);
+    setIndex(saved.index || 0);
+    setRoundNum(saved.roundNum || 1);
+    setMode(saved.mode || "all");
+    setSelectedGen(saved.selectedGen || 1);
+    setHistory([]);
+    setPickedIds([]);
+    setWinner(null);
+    setPhase("battle");
+  };
+
+  const clearSavedProgress = () => {
+    lsRemove(SAVE_KEY);
+    setHasSavedGame(false);
+  };
+
+  const loadWcStatus = useCallback(() => {
     const map = {};
     for (const g of GENERATIONS) {
-      try {
-        const res = await window.storage.get(`wc_rep_gen${g.gen}`, false);
-        map[g.gen] = res ? JSON.parse(res.value) : null;
-      } catch (e) {
-        map[g.gen] = null;
-      }
+      map[g.gen] = lsGet(`wc_rep_gen${g.gen}`);
     }
     setWcReps(map);
   }, []);
@@ -533,24 +683,17 @@ function App() {
       setRoundNum(1);
       setWinner(null);
       setHistory([]);
+      setPickedIds([]);
       setPhase("battle");
     },
     []
   );
 
-  const saveWcRep = useCallback(async () => {
+  const saveWcRep = useCallback(() => {
     const genInfo = GENERATIONS.find((g) => g.gen === wcActiveGen);
     const slots = genInfo ? genInfo.repSlots : 3;
     const topN = ranking.slice(0, slots);
-    try {
-      await window.storage.set(
-        `wc_rep_gen${wcActiveGen}`,
-        JSON.stringify(topN),
-        false
-      );
-    } catch (e) {
-      // 保存に失敗しても遊び自体は続けられるようにする
-    }
+    lsSet(`wc_rep_gen${wcActiveGen}`, topN);
     setWcActiveGen(null);
     openWcHub();
   }, [wcActiveGen, ranking, openWcHub]);
@@ -662,6 +805,7 @@ function App() {
     setRoundNum(1);
     setWinner(null);
     setHistory([]);
+    setPickedIds([]);
     setPhase("battle");
   }, [mode, selectedGen]);
 
@@ -688,6 +832,7 @@ function App() {
           setWinner(combined[0]);
           setEliminated(finalEliminated);
           setPhase("result");
+          setPickedIds([]);
           return;
         }
         setCurrentRound(shuffle(combined));
@@ -702,10 +847,45 @@ function App() {
         setEliminated(newEliminated);
         setIndex(newIndex);
       }
+      setPickedIds([]);
     },
     [currentRound]
   );
 
+  // 候補が少ない時(最後のグループが2匹だけ、等)に全員選んでしまうと
+  // 誰も脱落せず無限ループになるため、必ず1匹以上は脱落するよう上限を調整する
+  const effectiveMaxPicks = Math.min(MAX_PICKS, Math.max(1, options.length - 1));
+
+  const togglePick = (mon) => {
+    setPickedIds((ids) => {
+      if (ids.includes(mon.id)) {
+        return ids.filter((id) => id !== mon.id);
+      }
+      if (ids.length >= effectiveMaxPicks) {
+        // 既に上限まで選択中なら、一番古い選択を外して新しい方を入れる
+        return [...ids.slice(1), mon.id];
+      }
+      return [...ids, mon.id];
+    });
+  };
+
+  const confirmPick = () => {
+    if (pickedIds.length === 0) return;
+    pushSnapshot();
+    setFlash(true);
+    setTimeout(() => setFlash(false), 150);
+    const pickedMons = options.filter((o) => pickedIds.includes(o.id));
+    const losers = options.filter((o) => !pickedIds.includes(o.id));
+    const newEliminated = [
+      ...eliminated,
+      ...losers.map((l) => ({ ...l, round: roundNum })),
+    ];
+    const newWinners = [...winners, ...pickedMons];
+    const newIndex = index + options.length;
+    resolveRoundEnd(newWinners, deferred, newEliminated, newIndex, null);
+  };
+
+  // 1匹しか候補がいない(自動繰り上げ)時用に、単体選択のショートカットも残す
   const handlePick = (mon) => {
     pushSnapshot();
     setFlash(true);
@@ -744,6 +924,7 @@ function App() {
       setRoundNum(prev.roundNum);
       setWinner(null);
       setPhase(prev.phase);
+      setPickedIds([]);
       return h.slice(0, -1);
     });
   };
@@ -1110,6 +1291,41 @@ function App() {
           border-bottom: 2px dashed #306230;
           padding-bottom: 6px;
           margin-bottom: 8px;
+          gap: 6px;
+        }
+        .save-btn {
+          font-family: 'DotGothic16', sans-serif;
+          background: transparent;
+          border: 1px solid #306230;
+          color: #306230;
+          border-radius: 4px;
+          padding: 3px 6px;
+          font-size: 10px;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+        .save-btn:active { background: rgba(48,98,48,0.15); }
+        .save-notice {
+          font-family: 'DotGothic16', sans-serif;
+          color: #0f380f;
+          background: #cfe0a0;
+          border: 1px solid #306230;
+          border-radius: 4px;
+          font-size: 10px;
+          text-align: center;
+          padding: 4px;
+          margin-bottom: 6px;
+        }
+        .gb-button-text {
+          font-family: 'DotGothic16', sans-serif;
+          background: transparent;
+          border: none;
+          color: #4d6e4d;
+          font-size: 10px;
+          text-decoration: underline;
+          letter-spacing: 0.5px;
+          cursor: pointer;
+          margin-top: 2px;
         }
         .back-btn {
           font-family: 'DotGothic16', sans-serif;
@@ -1229,6 +1445,7 @@ function App() {
           animation: popin 0.2s ease-out both;
         }
         .lcd-card:active { background: #8bac0f; }
+        .lcd-card-selected { background: #8bac0f; border-color: #062606; box-shadow: 0 0 0 2px #0f380f inset; }
         @keyframes popin { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: scale(1); } }
         .lcd-card-imgwrap {
           position: relative;
@@ -1241,6 +1458,43 @@ function App() {
           image-rendering: pixelated;
         }
         .lcd-card-imgwrap img { max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 3px 2px rgba(15,56,15,0.35)); }
+        .lcd-card-check {
+          position: absolute;
+          top: -6px;
+          left: -6px;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: #0f380f;
+          color: #cfe0a0;
+          font-size: 13px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-family: 'DotGothic16', sans-serif;
+        }
+        .pick-hint {
+          font-family: 'DotGothic16', sans-serif;
+          color: #4d6e4d;
+          font-size: 11px;
+          text-align: center;
+          letter-spacing: 0.5px;
+          margin-bottom: 4px;
+        }
+        .confirm-btn {
+          font-family: 'DotGothic16', sans-serif;
+          background: #0f380f;
+          color: #cfe0a0;
+          border: 2px solid #0f380f;
+          border-radius: 6px;
+          padding: 8px;
+          font-size: 13px;
+          letter-spacing: 1px;
+          margin-top: 6px;
+          cursor: pointer;
+        }
+        .confirm-btn:disabled { opacity: 0.4; cursor: default; }
+        .confirm-btn:not(:disabled):active { background: #306230; }
         .alt-form-badge {
           position: absolute;
           right: -4px;
@@ -1531,7 +1785,7 @@ function App() {
               <div className="title-wrap">
                 <h1>すきなポケモンは？</h1>
                 <p>
-                  3択で出てくるポケモンから好きな1匹を選び続けて、
+                  4択で出てくるポケモンから好きな1〜2匹を選び続けて、
                   <br />
                   あなたの一番好きな1匹を決めよう。
                 </p>
@@ -1569,6 +1823,16 @@ function App() {
                 <button className="gb-button" onClick={start}>
                   スタート({GENERATIONS.find((g) => g.gen === selectedGen)?.region})
                 </button>
+                {hasSavedGame && (
+                  <button className="gb-button small" onClick={resumeProgress}>
+                    ▶ 続きから再開する
+                  </button>
+                )}
+                {hasSavedGame && (
+                  <button className="gb-button-text" onClick={clearSavedProgress}>
+                    保存データを消す
+                  </button>
+                )}
                 <button className="gb-button small wc-entry" onClick={openWcHub}>
                   🏆 ワールドカップ
                 </button>
@@ -1679,16 +1943,37 @@ function App() {
                   <span>
                     ROUND {roundNum}　{pairsDone + 1}／{pairsThisRound}
                   </span>
+                  {!wcActiveGen && (
+                    <button className="save-btn" onClick={saveAndGoTitle}>
+                      💾 保存
+                    </button>
+                  )}
+                </div>
+                {saveNotice && <div className="save-notice">{saveNotice}</div>}
+                <div className="pick-hint">
+                  好きな順に最大{effectiveMaxPicks}匹までタップ({pickedIds.length}/{effectiveMaxPicks})
                 </div>
                 <div className="vs-wrap">
                   {options.map((mon) => (
-                    <PokemonCard key={mon.id} mon={mon} onPick={handlePick} />
+                    <PokemonCard
+                      key={mon.id}
+                      mon={mon}
+                      selected={pickedIds.includes(mon.id)}
+                      onToggle={togglePick}
+                    />
                   ))}
                 </div>
+                <button
+                  className="confirm-btn"
+                  onClick={confirmPick}
+                  disabled={pickedIds.length === 0}
+                >
+                  この{pickedIds.length}匹で決定
+                </button>
                 <button className="skip-btn" onClick={handleSkip}>
                   どれも好きじゃない
                 </button>
-                <div className="skip-hint">→ この3匹はここで対象から外れるよ</div>
+                <div className="skip-hint">→ この{GROUP_SIZE}匹はここで対象から外れるよ</div>
               </>
             )}
 
@@ -1776,6 +2061,13 @@ function App() {
                       disabled={history.length === 0}
                     >
                       ◀ もどる
+                    </button>
+                    <button
+                      className="ds-touch-btn ds-touch-primary"
+                      onClick={confirmPick}
+                      disabled={pickedIds.length === 0}
+                    >
+                      ✓ 決定({pickedIds.length})
                     </button>
                     <button className="ds-touch-btn" onClick={handleSkip}>
                       ✕ どれも好きじゃない
