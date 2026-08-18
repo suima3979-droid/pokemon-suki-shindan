@@ -685,6 +685,15 @@ function App() {
     setPhase("title");
   };
 
+  // 保存せずに今の進行をリセットしてタイトルに戻る(やめる)
+  const quitToTitle = () => {
+    setWinner(null);
+    setWcChampion(null);
+    setWcActiveGen(null);
+    setWcPhase(null);
+    setPhase("title");
+  };
+
   const resumeProgress = () => {
     const saved = lsGet(SAVE_KEY);
     if (!saved) return;
@@ -1393,6 +1402,7 @@ function App() {
           font-size: 12px;
           letter-spacing: 1px;
           display: flex;
+          flex-wrap: wrap;
           justify-content: space-between;
           align-items: center;
           border-bottom: 2px dashed #306230;
@@ -1412,6 +1422,18 @@ function App() {
           white-space: nowrap;
         }
         .save-btn:active { background: rgba(48,98,48,0.15); }
+        .quit-btn {
+          font-family: 'DotGothic16', sans-serif;
+          background: transparent;
+          border: 1px solid #8a3a3a;
+          color: #8a3a3a;
+          border-radius: 4px;
+          padding: 3px 6px;
+          font-size: 10px;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+        .quit-btn:active { background: rgba(138,58,58,0.15); }
         .save-notice {
           font-family: 'DotGothic16', sans-serif;
           color: #0f380f;
@@ -1896,6 +1918,25 @@ function App() {
         .jc-y { top: 9px; left: 0; }
         .jc-a { top: 9px; left: 19px; }
         .jc-b { top: 19px; left: 9px; }
+
+        /* PCなど横幅が広い画面向け: 本体を横に広げてカードも2列表示にする */
+        @media (min-width: 700px) {
+          .gb-body { max-width: 640px; }
+          .vs-wrap {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+          }
+          .wc-battle .vs-wrap {
+            display: flex;
+          }
+          .gen-list {
+            max-height: none;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px 8px;
+          }
+        }
       `}</style>
 
       <div className="gb-body">
@@ -1904,7 +1945,7 @@ function App() {
           <div className={`gb-screen${flash ? " flash" : ""}`}>
             {phase === "title" && (
               <div className="title-wrap">
-                <h1>すきなポケモンは？</h1>
+                <h1>あなたの本当に好きなポケモンは？</h1>
                 <p>
                   4択で出てくるポケモンから好きな1〜2匹を選び続けて、
                   <br />
@@ -1970,6 +2011,9 @@ function App() {
                   <button className="save-btn" onClick={stopAndSave}>
                     💾 中断して保存
                   </button>
+                  <button className="quit-btn" onClick={quitToTitle}>
+                    ✕ やめる
+                  </button>
                 </div>
                 {saveNotice && <div className="save-notice">{saveNotice}</div>}
                 <p className="wc-desc">
@@ -2013,6 +2057,9 @@ function App() {
                   <button className="save-btn" onClick={stopAndSave}>
                     💾 中断して保存
                   </button>
+                  <button className="quit-btn" onClick={quitToTitle}>
+                    ✕ やめる
+                  </button>
                 </div>
                 {saveNotice && <div className="save-notice">{saveNotice}</div>}
                 <div className="vs-wrap">
@@ -2037,6 +2084,9 @@ function App() {
                   <span>{wcRoundLabel}</span>
                   <button className="save-btn" onClick={stopAndSave}>
                     💾 中断して保存
+                  </button>
+                  <button className="quit-btn" onClick={quitToTitle}>
+                    ✕ やめる
                   </button>
                 </div>
                 {saveNotice && <div className="save-notice">{saveNotice}</div>}
@@ -2079,11 +2129,15 @@ function App() {
                   <button className="save-btn" onClick={stopAndSave}>
                     💾 中断して保存
                   </button>
+                  <button className="quit-btn" onClick={quitToTitle}>
+                    ✕ やめる
+                  </button>
                 </div>
                 {saveNotice && <div className="save-notice">{saveNotice}</div>}
                 <div className="pick-hint">
-                  最大{effectiveMaxPicks}匹まで選べるよ({pickedIds.length}/{effectiveMaxPicks})
-                  {effectiveMaxPicks > 1 && "・本当に好きなら1匹だけ選ぶと順位に強く反映されるよ"}
+                  {effectiveMaxPicks > 1
+                    ? `最大${effectiveMaxPicks}匹まで選べるよ。1匹だけ選ぶと"好き"がより強く反映されるよ`
+                    : `1匹選んでね`}
                 </div>
                 <div className="vs-wrap">
                   {options.map((mon) => (
