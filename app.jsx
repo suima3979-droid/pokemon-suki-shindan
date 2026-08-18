@@ -434,14 +434,38 @@ const ALT_FORMS = {
   9: { formId: 10036, label: "メガシンカ" },     // blastoise-mega
   15: { formId: 10090, label: "メガシンカ" },    // beedrill-mega
   18: { formId: 10073, label: "メガシンカ" },    // pidgeot-mega
+  26: { formId: 10304, label: "メガシンカ" },    // raichu-mega-x (LEGENDS Z-A)
+  36: { formId: 10278, label: "メガシンカ" },    // clefable-mega (LEGENDS Z-A)
   65: { formId: 10037, label: "メガシンカ" },    // alakazam-mega
+  71: { formId: 10279, label: "メガシンカ" },    // victreebel-mega (LEGENDS Z-A)
   80: { formId: 10071, label: "メガシンカ" },    // slowbro-mega
   94: { formId: 10038, label: "メガシンカ" },    // gengar-mega
   115: { formId: 10039, label: "メガシンカ" },   // kangaskhan-mega
+  121: { formId: 10280, label: "メガシンカ" },   // starmie-mega (LEGENDS Z-A)
   127: { formId: 10040, label: "メガシンカ" },   // pinsir-mega
   130: { formId: 10041, label: "メガシンカ" },   // gyarados-mega
   142: { formId: 10042, label: "メガシンカ" },   // aerodactyl-mega
+  149: { formId: 10281, label: "メガシンカ" },   // dragonite-mega (LEGENDS Z-A)
   150: { formId: 10043, label: "メガシンカ" },   // mewtwo-mega-x
+  154: { formId: 10282, label: "メガシンカ" },   // meganium-mega (LEGENDS Z-A)
+  160: { formId: 10283, label: "メガシンカ" },   // feraligatr-mega (LEGENDS Z-A)
+  227: { formId: 10284, label: "メガシンカ" },   // skarmory-mega (LEGENDS Z-A)
+  478: { formId: 10285, label: "メガシンカ" },   // froslass-mega (LEGENDS Z-A)
+  500: { formId: 10286, label: "メガシンカ" },   // emboar-mega (LEGENDS Z-A)
+  530: { formId: 10287, label: "メガシンカ" },   // excadrill-mega (LEGENDS Z-A)
+  545: { formId: 10288, label: "メガシンカ" },   // scolipede-mega (LEGENDS Z-A)
+  560: { formId: 10289, label: "メガシンカ" },   // scrafty-mega (LEGENDS Z-A)
+  604: { formId: 10290, label: "メガシンカ" },   // eelektross-mega (LEGENDS Z-A)
+  609: { formId: 10291, label: "メガシンカ" },   // chandelure-mega (LEGENDS Z-A)
+  652: { formId: 10292, label: "メガシンカ" },   // chesnaught-mega (LEGENDS Z-A)
+  655: { formId: 10293, label: "メガシンカ" },   // delphox-mega (LEGENDS Z-A)
+  658: { formId: 10294, label: "メガシンカ" },   // greninja-mega (LEGENDS Z-A)
+  668: { formId: 10295, label: "メガシンカ" },   // pyroar-mega (LEGENDS Z-A)
+  687: { formId: 10297, label: "メガシンカ" },   // malamar-mega (LEGENDS Z-A)
+  689: { formId: 10298, label: "メガシンカ" },   // barbaracle-mega (LEGENDS Z-A)
+  691: { formId: 10299, label: "メガシンカ" },   // dragalge-mega (LEGENDS Z-A)
+  701: { formId: 10300, label: "メガシンカ" },   // hawlucha-mega (LEGENDS Z-A)
+  870: { formId: 10303, label: "メガシンカ" },   // falinks-mega (LEGENDS Z-A)
 };
 
 const ALT_IMG_SOURCES = (formId) => [
@@ -449,22 +473,25 @@ const ALT_IMG_SOURCES = (formId) => [
   `https://cdn.jsdelivr.net/gh/PokeAPI/sprites/sprites/pokemon/other/official-artwork/${formId}.png`,
 ];
 
-function AltFormBadge({ mon, size = 40 }) {
+function AltFormBadge({ mon, size = 40, showLabel = false }) {
   const alt = ALT_FORMS[mon.id];
   const [srcIndex, setSrcIndex] = useState(0);
   if (!alt) return null;
   const sources = ALT_IMG_SOURCES(alt.formId);
   if (srcIndex >= sources.length) return null;
   return (
-    <img
-      className="alt-form-badge"
-      src={sources[srcIndex]}
-      alt={`${mon.name}(${alt.label})`}
-      title={alt.label}
-      draggable={false}
-      style={{ width: size, height: size }}
-      onError={() => setSrcIndex((i) => i + 1)}
-    />
+    <>
+      {showLabel && <div className="alt-form-badge-label">{alt.label}</div>}
+      <img
+        className="alt-form-badge"
+        src={sources[srcIndex]}
+        alt={`${mon.name}(${alt.label})`}
+        title={alt.label}
+        draggable={false}
+        style={{ width: size, height: size }}
+        onError={() => setSrcIndex((i) => i + 1)}
+      />
+    </>
   );
 }
 
@@ -519,13 +546,14 @@ function ResultImage({ mon }) {
       ) : (
         <div className="lcd-fallback">?</div>
       )}
-      <AltFormBadge mon={mon} size={56} />
+      <AltFormBadge mon={mon} size={40} showLabel />
     </div>
   );
 }
 
 const GROUP_SIZE = 4;
 const MAX_PICKS = 2; // 1回に勝ち進ませられる最大数
+const FINAL_AUTO_THRESHOLD = 3; // 残りがこの数以下になったら選ばれた回数で自動決着
 const RANKING_LIMIT = 20;
 
 const POKEMON_BY_GEN = {
@@ -547,12 +575,17 @@ function App() {
   const [mode, setMode] = useState("all"); // all | final
   const [selectedGen, setSelectedGen] = useState(1);
   const [pickedIds, setPickedIds] = useState([]); // このラウンドで選択中のID(最大MAX_PICKS)
+  const [scores, setScores] = useState({}); // { [id]: 累計スコア } 選ばれた回数をラウンド重み付きで集計
 
   const ranking = winner
     ? [
         winner,
         ...[...eliminated]
-          .sort((a, b) => b.round - a.round)
+          .sort((a, b) => {
+            // まず「どこまで勝ち残ったか」、同じなら「選ばれた回数」で順位づけ
+            if (b.round !== a.round) return b.round - a.round;
+            return (scores[b.id] || 0) - (scores[a.id] || 0);
+          })
           .slice(0, RANKING_LIMIT - 1),
       ]
     : [];
@@ -607,9 +640,15 @@ function App() {
     setHasSavedGame(!!lsGet(SAVE_KEY));
   }, []);
 
+  // 通常診断・ワールドカップ予選・グループステージ・決勝トーナメント、
+  // どのフェーズからでも呼べる汎用セーブ
   const saveProgress = () => {
     const ok = lsSet(SAVE_KEY, {
-      phase: "battle",
+      phase,
+      wcPhase,
+      wcActiveGen,
+      wcReps,
+      // 通常診断 / ワールドカップ予選で共通して使う対戦state
       currentRound,
       winners,
       deferred,
@@ -618,17 +657,31 @@ function App() {
       roundNum,
       mode,
       selectedGen,
+      scores,
+      // ワールドカップ グループステージ
+      wcGroups,
+      wcGroupIndex,
+      wcMatchIndex,
+      wcWins,
+      wcGroupWinners,
+      // ワールドカップ 決勝トーナメント
+      wcBracket,
+      wcBracketIndex,
+      wcBracketWinners,
+      wcRoundLabel,
       savedAt: Date.now(),
     });
     setHasSavedGame(ok);
     setSaveNotice(ok ? "保存したよ。タイトルから続きを再開できる" : "保存に失敗したよ");
     setTimeout(() => setSaveNotice(""), 2000);
+    return ok;
   };
 
-  const saveAndGoTitle = () => {
+  // どの画面からでも呼べる「中断して保存してタイトルに戻る」ボタン用
+  const stopAndSave = () => {
     saveProgress();
-    setWcActiveGen(null);
     setWinner(null);
+    setWcChampion(null);
     setPhase("title");
   };
 
@@ -643,10 +696,24 @@ function App() {
     setRoundNum(saved.roundNum || 1);
     setMode(saved.mode || "all");
     setSelectedGen(saved.selectedGen || 1);
+    setWcActiveGen(saved.wcActiveGen || null);
+    setWcReps(saved.wcReps || {});
+    setWcGroups(saved.wcGroups || []);
+    setWcGroupIndex(saved.wcGroupIndex || 0);
+    setWcMatchIndex(saved.wcMatchIndex || 0);
+    setWcWins(saved.wcWins || {});
+    setWcGroupWinners(saved.wcGroupWinners || []);
+    setWcBracket(saved.wcBracket || []);
+    setWcBracketIndex(saved.wcBracketIndex || 0);
+    setWcBracketWinners(saved.wcBracketWinners || []);
+    setWcRoundLabel(saved.wcRoundLabel || "");
+    setScores(saved.scores || {});
     setHistory([]);
     setPickedIds([]);
     setWinner(null);
-    setPhase("battle");
+    setWcChampion(null);
+    setWcPhase(saved.wcPhase || null);
+    setPhase(saved.phase || "battle");
   };
 
   const clearSavedProgress = () => {
@@ -684,6 +751,7 @@ function App() {
       setWinner(null);
       setHistory([]);
       setPickedIds([]);
+      setScores({});
       setPhase("battle");
     },
     []
@@ -806,6 +874,7 @@ function App() {
     setWinner(null);
     setHistory([]);
     setPickedIds([]);
+    setScores({});
     setPhase("battle");
   }, [mode, selectedGen]);
 
@@ -814,12 +883,30 @@ function App() {
   const pushSnapshot = useCallback(() => {
     setHistory((h) => [
       ...h,
-      { currentRound, winners, deferred, eliminated, index, roundNum, phase: "battle" },
+      { currentRound, winners, deferred, eliminated, index, roundNum, scores, phase: "battle" },
     ]);
-  }, [currentRound, winners, deferred, eliminated, index, roundNum]);
+  }, [currentRound, winners, deferred, eliminated, index, roundNum, scores]);
+
+  // スコアが最も高いポケモンを返す。同点なら、より後のラウンドまで残っていた方を優先
+  const pickTopByScore = useCallback(
+    (candidates, scoreMap) => {
+      if (candidates.length === 0) return null;
+      let best = candidates[0];
+      let bestScore = scoreMap[best.id] || 0;
+      for (const c of candidates) {
+        const s = scoreMap[c.id] || 0;
+        if (s > bestScore) {
+          bestScore = s;
+          best = c;
+        }
+      }
+      return best;
+    },
+    []
+  );
 
   const resolveRoundEnd = useCallback(
-    (newWinners, newDeferred, newEliminated, newIndex, lastGroup) => {
+    (newWinners, newDeferred, newEliminated, newIndex, lastGroup, scoreMap) => {
       if (newIndex >= currentRound.length) {
         let combined = [...newWinners, ...newDeferred];
         let finalEliminated = newEliminated;
@@ -828,9 +915,15 @@ function App() {
           combined = lastGroup;
           finalEliminated = newEliminated.slice(0, newEliminated.length - lastGroup.length);
         }
-        if (combined.length === 1) {
-          setWinner(combined[0]);
-          setEliminated(finalEliminated);
+        // 残りが少なくなったら「究極の2択」を出さずに、
+        // ここまでの選ばれた回数(スコア)で自動的に1位を決める
+        if (combined.length <= FINAL_AUTO_THRESHOLD) {
+          const champ = pickTopByScore(combined, scoreMap);
+          const runnerUps = combined
+            .filter((c) => c.id !== champ.id)
+            .map((c) => ({ ...c, round: roundNum + 1 }));
+          setWinner(champ);
+          setEliminated([...finalEliminated, ...runnerUps]);
           setPhase("result");
           setPickedIds([]);
           return;
@@ -849,7 +942,7 @@ function App() {
       }
       setPickedIds([]);
     },
-    [currentRound]
+    [currentRound, roundNum, pickTopByScore]
   );
 
   // 候補が少ない時(最後のグループが2匹だけ、等)に全員選んでしまうと
@@ -882,7 +975,15 @@ function App() {
     ];
     const newWinners = [...winners, ...pickedMons];
     const newIndex = index + options.length;
-    resolveRoundEnd(newWinners, deferred, newEliminated, newIndex, null);
+    // 選んだ数が少ないほど「絞り込まれた本命」ということで加点を大きくする
+    // (MAX_PICKS=2択が選べる場面で1匹だけ選べば2点、2匹選べば1点ずつ)
+    const pointsPerPick = MAX_PICKS - pickedMons.length + 1;
+    const newScores = { ...scores };
+    for (const m of pickedMons) {
+      newScores[m.id] = (newScores[m.id] || 0) + pointsPerPick;
+    }
+    setScores(newScores);
+    resolveRoundEnd(newWinners, deferred, newEliminated, newIndex, null, newScores);
   };
 
   // 1匹しか候補がいない(自動繰り上げ)時用に、単体選択のショートカットも残す
@@ -897,7 +998,12 @@ function App() {
     ];
     const newWinners = [...winners, mon];
     const newIndex = index + options.length;
-    resolveRoundEnd(newWinners, deferred, newEliminated, newIndex, null);
+    // 不戦勝(候補が1匹だけ)の場合は加点しない
+    const newScores = options.length > 1
+      ? { ...scores, [mon.id]: (scores[mon.id] || 0) + roundNum }
+      : scores;
+    if (options.length > 1) setScores(newScores);
+    resolveRoundEnd(newWinners, deferred, newEliminated, newIndex, null, newScores);
   };
 
   const handleSkip = () => {
@@ -909,7 +1015,7 @@ function App() {
       ...options.map((o) => ({ ...o, round: roundNum })),
     ];
     const newIndex = index + options.length;
-    resolveRoundEnd(winners, deferred, newEliminated, newIndex, options);
+    resolveRoundEnd(winners, deferred, newEliminated, newIndex, options, scores);
   };
 
   const handleBack = () => {
@@ -925,6 +1031,7 @@ function App() {
       setWinner(null);
       setPhase(prev.phase);
       setPickedIds([]);
+      setScores(prev.scores || {});
       return h.slice(0, -1);
     });
   };
@@ -1561,7 +1668,21 @@ function App() {
         }
         .result-img-wrap { position: relative; display: inline-block; width: 65%; }
         .result-img { width: 100%; filter: drop-shadow(0 6px 6px rgba(15,56,15,0.4)); }
-        .result-img-wrap .alt-form-badge { right: -6%; bottom: -6%; }
+        .result-img-wrap .alt-form-badge { right: -4%; top: -6%; bottom: auto; }
+        .alt-form-badge-label {
+          position: absolute;
+          top: -6%;
+          right: -4%;
+          transform: translateY(-100%);
+          font-family: 'DotGothic16', sans-serif;
+          font-size: 9px;
+          color: #0f380f;
+          background: rgba(255,255,255,0.9);
+          border: 1px solid rgba(15,56,15,0.4);
+          border-radius: 4px;
+          padding: 1px 4px;
+          white-space: nowrap;
+        }
         .result-name {
           font-family: 'DotGothic16', sans-serif;
           color: #0f380f;
@@ -1846,7 +1967,11 @@ function App() {
                     ◀ もどる
                   </button>
                   <span>ワールドカップ ({wcDoneCount}/9)</span>
+                  <button className="save-btn" onClick={stopAndSave}>
+                    💾 中断して保存
+                  </button>
                 </div>
+                {saveNotice && <div className="save-notice">{saveNotice}</div>}
                 <p className="wc-desc">
                   各地方の予選を遊んで代表を選出しよう。9地方すべて終わると決勝ラウンドが解禁される。
                 </p>
@@ -1885,7 +2010,11 @@ function App() {
                   <span>
                     グループ {wcGroupIndex + 1}/8 ・ 第{wcMatchIndex + 1}/6試合
                   </span>
+                  <button className="save-btn" onClick={stopAndSave}>
+                    💾 中断して保存
+                  </button>
                 </div>
+                {saveNotice && <div className="save-notice">{saveNotice}</div>}
                 <div className="vs-wrap">
                   {(() => {
                     const [ai, bi] = buildRoundRobinPairs()[wcMatchIndex];
@@ -1906,7 +2035,11 @@ function App() {
               <div className="wc-battle">
                 <div className="lcd-header">
                   <span>{wcRoundLabel}</span>
+                  <button className="save-btn" onClick={stopAndSave}>
+                    💾 中断して保存
+                  </button>
                 </div>
+                {saveNotice && <div className="save-notice">{saveNotice}</div>}
                 <div className="vs-wrap">
                   <PokemonCard mon={wcBracket[wcBracketIndex]} onPick={handleKnockoutPick} />
                   <div className="vs-divider">▲ VS ▼</div>
@@ -1943,15 +2076,14 @@ function App() {
                   <span>
                     ROUND {roundNum}　{pairsDone + 1}／{pairsThisRound}
                   </span>
-                  {!wcActiveGen && (
-                    <button className="save-btn" onClick={saveAndGoTitle}>
-                      💾 保存
-                    </button>
-                  )}
+                  <button className="save-btn" onClick={stopAndSave}>
+                    💾 中断して保存
+                  </button>
                 </div>
                 {saveNotice && <div className="save-notice">{saveNotice}</div>}
                 <div className="pick-hint">
-                  好きな順に最大{effectiveMaxPicks}匹までタップ({pickedIds.length}/{effectiveMaxPicks})
+                  最大{effectiveMaxPicks}匹まで選べるよ({pickedIds.length}/{effectiveMaxPicks})
+                  {effectiveMaxPicks > 1 && "・本当に好きなら1匹だけ選ぶと順位に強く反映されるよ"}
                 </div>
                 <div className="vs-wrap">
                   {options.map((mon) => (
