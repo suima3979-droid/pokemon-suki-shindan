@@ -775,6 +775,21 @@ function App() {
     openWcHub();
   }, [wcActiveGen, ranking, openWcHub]);
 
+  // 通常の診断結果(ranking)を、そのままそのgenのW杯代表として登録する
+  const [wcRegisterNotice, setWcRegisterNotice] = useState("");
+  const registerNormalResultAsWcRep = useCallback(() => {
+    const genInfo = GENERATIONS.find((g) => g.gen === selectedGen);
+    const slots = genInfo ? genInfo.repSlots : 3;
+    const topN = ranking.slice(0, slots);
+    const ok = lsSet(`wc_rep_gen${selectedGen}`, topN);
+    setWcRegisterNotice(
+      ok
+        ? `${genInfo ? genInfo.region : ""}の代表${slots}匹をワールドカップに登録したよ`
+        : "登録に失敗したよ"
+    );
+    setTimeout(() => setWcRegisterNotice(""), 2500);
+  }, [selectedGen, ranking]);
+
   const buildRoundRobinPairs = () => [
     [0, 1], [0, 2], [0, 3], [1, 2], [1, 3], [2, 3],
   ];
@@ -2187,6 +2202,16 @@ function App() {
                       もう一度あそぶ
                     </button>
                   </div>
+                )}
+                {!wcActiveGen && (
+                  <>
+                    <button className="gb-button small wc-entry" onClick={registerNormalResultAsWcRep}>
+                      🏆 この結果をW杯代表にする
+                    </button>
+                    {wcRegisterNotice && (
+                      <div className="save-notice">{wcRegisterNotice}</div>
+                    )}
+                  </>
                 )}
                 <button className="gb-button small" onClick={goToTitle}>
                   メインメニューへ
