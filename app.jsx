@@ -489,6 +489,13 @@ const ALT_FORMS = {
   460: [{ formId: 10060, label: "メガシンカ" }],   // abomasnow-mega
   475: [{ formId: 10068, label: "メガシンカ" }],   // gallade-mega
   478: [{ formId: 10285, label: "メガシンカ" }],   // froslass-mega (LEGENDS Z-A)
+  479: [
+    { formId: 10008, label: "ヒートロトム" },
+    { formId: 10009, label: "ウォッシュロトム" },
+    { formId: 10010, label: "フロストロトム" },
+    { formId: 10011, label: "スピンロトム" },
+    { formId: 10012, label: "カットロトム" },
+  ], // rotom forms
   500: [{ formId: 10286, label: "メガシンカ" }],   // emboar-mega (LEGENDS Z-A)
   530: [{ formId: 10287, label: "メガシンカ" }],   // excadrill-mega (LEGENDS Z-A)
   531: [{ formId: 10069, label: "メガシンカ" }],   // audino-mega
@@ -535,6 +542,8 @@ function SingleAltBadge({ formId, name, label, size, showLabel, style }) {
 function AltFormBadge({ mon, size = 40, showLabel = false }) {
   const alts = ALT_FORMS[mon.id];
   if (!alts || alts.length === 0) return null;
+  // フォルムがたくさんある(ロトム等)場合は自動で少し小さくする
+  const effectiveSize = alts.length >= 4 ? Math.round(size * 0.7) : size;
   return (
     <div className="alt-form-badge-group">
       {alts.map((alt) => (
@@ -543,7 +552,7 @@ function AltFormBadge({ mon, size = 40, showLabel = false }) {
           formId={alt.formId}
           name={mon.name}
           label={alt.label}
-          size={size}
+          size={effectiveSize}
           showLabel={showLabel}
         />
       ))}
@@ -1613,6 +1622,25 @@ function App() {
           line-height: 1.7;
           margin: 0;
         }
+        .title-controls {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 8px;
+          width: 100%;
+        }
+        /* DS系テーマは操作系を下のタッチ画面にまとめるので、上画面側は隠す */
+        .theme-ds .title-controls,
+        .theme-ds2 .title-controls {
+          display: none;
+        }
+        .ds-touch-title-controls {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 8px;
+          width: 100%;
+        }
         .gen-list {
           width: 100%;
           display: flex;
@@ -1765,7 +1793,10 @@ function App() {
           right: -4px;
           bottom: -4px;
           display: flex;
+          flex-wrap: wrap;
+          justify-content: flex-end;
           gap: 2px;
+          max-width: 90px;
         }
         .alt-form-badge-item { position: relative; display: flex; flex-direction: column; align-items: center; }
         .alt-form-badge {
@@ -2109,37 +2140,39 @@ function App() {
                     </button>
                   ))}
                 </div>
-                <div className="mode-toggle">
-                  <button
-                    className={`mode-btn${mode === "all" ? " active" : ""}`}
-                    onClick={() => setMode("all")}
-                  >
-                    全{GENERATIONS.find((g) => g.gen === selectedGen)?.count}匹
+                <div className="title-controls">
+                  <div className="mode-toggle">
+                    <button
+                      className={`mode-btn${mode === "all" ? " active" : ""}`}
+                      onClick={() => setMode("all")}
+                    >
+                      全{GENERATIONS.find((g) => g.gen === selectedGen)?.count}匹
+                    </button>
+                    <button
+                      className={`mode-btn${mode === "final" ? " active" : ""}`}
+                      onClick={() => setMode("final")}
+                    >
+                      最終進化のみ
+                      <span className="mode-badge">オススメ</span>
+                    </button>
+                  </div>
+                  <button className="gb-button" onClick={start}>
+                    スタート({GENERATIONS.find((g) => g.gen === selectedGen)?.region})
                   </button>
-                  <button
-                    className={`mode-btn${mode === "final" ? " active" : ""}`}
-                    onClick={() => setMode("final")}
-                  >
-                    最終進化のみ
-                    <span className="mode-badge">オススメ</span>
+                  {hasSavedGame && (
+                    <button className="gb-button small" onClick={resumeProgress}>
+                      ▶ 続きから再開する
+                    </button>
+                  )}
+                  {hasSavedGame && (
+                    <button className="gb-button-text" onClick={clearSavedProgress}>
+                      保存データを消す
+                    </button>
+                  )}
+                  <button className="gb-button small wc-entry" onClick={openWcHub}>
+                    🏆 ワールドカップ
                   </button>
                 </div>
-                <button className="gb-button" onClick={start}>
-                  スタート({GENERATIONS.find((g) => g.gen === selectedGen)?.region})
-                </button>
-                {hasSavedGame && (
-                  <button className="gb-button small" onClick={resumeProgress}>
-                    ▶ 続きから再開する
-                  </button>
-                )}
-                {hasSavedGame && (
-                  <button className="gb-button-text" onClick={clearSavedProgress}>
-                    保存データを消す
-                  </button>
-                )}
-                <button className="gb-button small wc-entry" onClick={openWcHub}>
-                  🏆 ワールドカップ
-                </button>
               </div>
             )}
 
@@ -2419,16 +2452,37 @@ function App() {
           <div className="ds-bottom-screen-bezel">
             <div className="ds-bottom-screen">
               {phase === "title" && (
-                <>
-                  <div className="ds-touch-label">タッチスクリーン</div>
+                <div className="ds-touch-title-controls">
+                  <div className="mode-toggle">
+                    <button
+                      className={`mode-btn${mode === "all" ? " active" : ""}`}
+                      onClick={() => setMode("all")}
+                    >
+                      全{GENERATIONS.find((g) => g.gen === selectedGen)?.count}匹
+                    </button>
+                    <button
+                      className={`mode-btn${mode === "final" ? " active" : ""}`}
+                      onClick={() => setMode("final")}
+                    >
+                      最終進化のみ
+                      <span className="mode-badge">オススメ</span>
+                    </button>
+                  </div>
                   <button className="ds-touch-btn ds-touch-primary" onClick={start}>
-                    ▶ スタート
+                    ▶ スタート({GENERATIONS.find((g) => g.gen === selectedGen)?.region})
                   </button>
-                </>
+                  {hasSavedGame && (
+                    <button className="ds-touch-btn" onClick={resumeProgress}>
+                      ▶ 続きから再開する
+                    </button>
+                  )}
+                  <button className="ds-touch-btn" onClick={openWcHub}>
+                    🏆 ワールドカップ
+                  </button>
+                </div>
               )}
               {phase === "battle" && (
                 <>
-                  <div className="ds-touch-label">タッチスクリーン</div>
                   <div className="ds-touch-row">
                     <button
                       className="ds-touch-btn"
@@ -2452,7 +2506,6 @@ function App() {
               )}
               {phase === "result" && (
                 <>
-                  <div className="ds-touch-label">タッチスクリーン</div>
                   <div className="ds-touch-row">
                     <button className="ds-touch-btn" onClick={() => setPhase("ranking")}>
                       ランキング
@@ -2474,7 +2527,6 @@ function App() {
               )}
               {phase === "ranking" && (
                 <>
-                  <div className="ds-touch-label">タッチスクリーン</div>
                   <div className="ds-touch-row">
                     <button className="ds-touch-btn" onClick={() => setPhase("result")}>
                       ◀ もどる
@@ -2490,7 +2542,6 @@ function App() {
               )}
               {phase === "wc" && wcPhase === "hub" && (
                 <>
-                  <div className="ds-touch-label">タッチスクリーン</div>
                   <button
                     className="ds-touch-btn ds-touch-primary"
                     onClick={startGroupStage}
@@ -2508,7 +2559,6 @@ function App() {
               )}
               {phase === "wc" && wcPhase === "repView" && (
                 <>
-                  <div className="ds-touch-label">タッチスクリーン</div>
                   <button className="ds-touch-btn" onClick={() => setWcPhase("hub")}>
                     ◀ もどる
                   </button>
@@ -2516,7 +2566,6 @@ function App() {
               )}
               {phase === "wc" && wcPhase === "champion" && (
                 <>
-                  <div className="ds-touch-label">タッチスクリーン</div>
                   <div className="ds-touch-row">
                     <button className="ds-touch-btn" onClick={openWcHub}>
                       ハブへ
