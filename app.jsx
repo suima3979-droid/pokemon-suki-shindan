@@ -6,7 +6,7 @@ const GENERATIONS = [
   { gen: 2, region: "ジョウト", start: 152, end: 251, theme: "gbc", count: 100, repSlots: 3 },
   { gen: 3, region: "ホウエン", start: 252, end: 386, theme: "gba", count: 135, repSlots: 4 },
   { gen: 4, region: "シンオウ", start: 387, end: 493, theme: "ds", count: 107, repSlots: 3 },
-  { gen: 5, region: "イッシュ", start: 494, end: 649, theme: "ds", count: 156, repSlots: 5 },
+  { gen: 5, region: "イッシュ", start: 494, end: 649, theme: "ds2", count: 156, repSlots: 5 },
   { gen: 6, region: "カロス", start: 650, end: 721, theme: "3ds", count: 72, repSlots: 2 },
   { gen: 7, region: "アローラ", start: 722, end: 809, theme: "3ds", count: 88 + 18, repSlots: 3 },
   { gen: 8, region: "ガラル", start: 810, end: 905, theme: "switch", count: 96 + 3, repSlots: 3 },
@@ -326,17 +326,18 @@ GEN8.push(...GEN8_GALAR);
 // 第一世代: 後の世代で進化先が追加されたポケモン(オコリザル→コノヨザル、
 // ゴルバット→クロバット等)は除外して更新
 const FINAL_IDS_GEN1 = new Set([
-  3,6,9,12,15,18,20,22,24,26,28,31,34,36,38,40,45,47,49,
-  51,53,55,58,59,62,65,68,71,73,76,78,80,85,87,89,91,
-  94,97,99,101,103,105,106,107,115,119,121,122,124,
-  127,128,130,131,132,134,135,136,139,141,142,143,144,145,146,149,
-  150,151,
+  3,6,9,12,15,18,20,22,24,26,28,31,34,36,38,40,42,45,47,49,
+  51,53,55,59,62,65,68,71,73,76,78,80,82,83,85,87,89,91,
+  94,95,97,99,101,103,105,106,107,108,110,112,113,114,115,117,
+  119,121,122,123,124,125,126,127,128,130,131,132,134,135,136,137,
+  139,141,142,143,144,145,146,149,150,151,
 ]);
 
 const FINAL_IDS_GEN2 = new Set([
-  154,157,160,162,164,166,168,169,171,178,181,182,184,185,186,189,192,195,196,
-  197,199,201,202,205,208,210,212,213,214,219,222,224,225,226,227,229,230,232,
-  235,237,241,242,243,244,245,248,249,250,251,
+  154,157,160,162,164,166,168,169,171,176,178,181,182,184,185,186,189,190,192,
+  193,195,196,197,198,199,200,201,202,203,205,206,207,208,210,211,212,213,214,
+  215,217,219,221,222,224,225,226,227,229,230,232,233,234,235,237,241,242,243,
+  244,245,248,249,250,251,
 ]);
 
 const FINAL_IDS_GEN3 = new Set([
@@ -429,43 +430,81 @@ const IMG_SOURCES = (id) => [
 // メガシンカのみ、通常フォルムのカードに小さく重ねて表示する。
 // アローラのすがた・ガラルのすがたはGEN7/GEN8にそれぞれ独立した1匹として追加済み。
 const ALT_FORMS = {
-  3: { formId: 10033, label: "メガシンカ" },     // venusaur-mega
-  6: { formId: 10034, label: "メガシンカ" },     // charizard-mega-x
-  9: { formId: 10036, label: "メガシンカ" },     // blastoise-mega
-  15: { formId: 10090, label: "メガシンカ" },    // beedrill-mega
-  18: { formId: 10073, label: "メガシンカ" },    // pidgeot-mega
-  26: { formId: 10304, label: "メガシンカ" },    // raichu-mega-x (LEGENDS Z-A)
-  36: { formId: 10278, label: "メガシンカ" },    // clefable-mega (LEGENDS Z-A)
-  65: { formId: 10037, label: "メガシンカ" },    // alakazam-mega
-  71: { formId: 10279, label: "メガシンカ" },    // victreebel-mega (LEGENDS Z-A)
-  80: { formId: 10071, label: "メガシンカ" },    // slowbro-mega
-  94: { formId: 10038, label: "メガシンカ" },    // gengar-mega
-  115: { formId: 10039, label: "メガシンカ" },   // kangaskhan-mega
-  121: { formId: 10280, label: "メガシンカ" },   // starmie-mega (LEGENDS Z-A)
-  127: { formId: 10040, label: "メガシンカ" },   // pinsir-mega
-  130: { formId: 10041, label: "メガシンカ" },   // gyarados-mega
-  142: { formId: 10042, label: "メガシンカ" },   // aerodactyl-mega
-  149: { formId: 10281, label: "メガシンカ" },   // dragonite-mega (LEGENDS Z-A)
-  150: { formId: 10043, label: "メガシンカ" },   // mewtwo-mega-x
-  154: { formId: 10282, label: "メガシンカ" },   // meganium-mega (LEGENDS Z-A)
-  160: { formId: 10283, label: "メガシンカ" },   // feraligatr-mega (LEGENDS Z-A)
-  227: { formId: 10284, label: "メガシンカ" },   // skarmory-mega (LEGENDS Z-A)
-  478: { formId: 10285, label: "メガシンカ" },   // froslass-mega (LEGENDS Z-A)
-  500: { formId: 10286, label: "メガシンカ" },   // emboar-mega (LEGENDS Z-A)
-  530: { formId: 10287, label: "メガシンカ" },   // excadrill-mega (LEGENDS Z-A)
-  545: { formId: 10288, label: "メガシンカ" },   // scolipede-mega (LEGENDS Z-A)
-  560: { formId: 10289, label: "メガシンカ" },   // scrafty-mega (LEGENDS Z-A)
-  604: { formId: 10290, label: "メガシンカ" },   // eelektross-mega (LEGENDS Z-A)
-  609: { formId: 10291, label: "メガシンカ" },   // chandelure-mega (LEGENDS Z-A)
-  652: { formId: 10292, label: "メガシンカ" },   // chesnaught-mega (LEGENDS Z-A)
-  655: { formId: 10293, label: "メガシンカ" },   // delphox-mega (LEGENDS Z-A)
-  658: { formId: 10294, label: "メガシンカ" },   // greninja-mega (LEGENDS Z-A)
-  668: { formId: 10295, label: "メガシンカ" },   // pyroar-mega (LEGENDS Z-A)
-  687: { formId: 10297, label: "メガシンカ" },   // malamar-mega (LEGENDS Z-A)
-  689: { formId: 10298, label: "メガシンカ" },   // barbaracle-mega (LEGENDS Z-A)
-  691: { formId: 10299, label: "メガシンカ" },   // dragalge-mega (LEGENDS Z-A)
-  701: { formId: 10300, label: "メガシンカ" },   // hawlucha-mega (LEGENDS Z-A)
-  870: { formId: 10303, label: "メガシンカ" },   // falinks-mega (LEGENDS Z-A)
+  3: [{ formId: 10033, label: "メガシンカ" }],     // venusaur-mega
+  6: [
+    { formId: 10034, label: "メガシンカX" },
+    { formId: 10035, label: "メガシンカY" },
+  ], // charizard-mega-x/y
+  9: [{ formId: 10036, label: "メガシンカ" }],     // blastoise-mega
+  15: [{ formId: 10090, label: "メガシンカ" }],    // beedrill-mega
+  18: [{ formId: 10073, label: "メガシンカ" }],    // pidgeot-mega
+  26: [{ formId: 10304, label: "メガシンカ" }],    // raichu-mega-x (LEGENDS Z-A)
+  36: [{ formId: 10278, label: "メガシンカ" }],    // clefable-mega (LEGENDS Z-A)
+  65: [{ formId: 10037, label: "メガシンカ" }],    // alakazam-mega
+  71: [{ formId: 10279, label: "メガシンカ" }],    // victreebel-mega (LEGENDS Z-A)
+  80: [{ formId: 10071, label: "メガシンカ" }],    // slowbro-mega
+  94: [{ formId: 10038, label: "メガシンカ" }],    // gengar-mega
+  115: [{ formId: 10039, label: "メガシンカ" }],   // kangaskhan-mega
+  121: [{ formId: 10280, label: "メガシンカ" }],   // starmie-mega (LEGENDS Z-A)
+  127: [{ formId: 10040, label: "メガシンカ" }],   // pinsir-mega
+  130: [{ formId: 10041, label: "メガシンカ" }],   // gyarados-mega
+  142: [{ formId: 10042, label: "メガシンカ" }],   // aerodactyl-mega
+  149: [{ formId: 10281, label: "メガシンカ" }],   // dragonite-mega (LEGENDS Z-A)
+  150: [
+    { formId: 10043, label: "メガシンカX" },
+    { formId: 10044, label: "メガシンカY" },
+  ], // mewtwo-mega-x/y
+  154: [{ formId: 10282, label: "メガシンカ" }],   // meganium-mega (LEGENDS Z-A)
+  160: [{ formId: 10283, label: "メガシンカ" }],   // feraligatr-mega (LEGENDS Z-A)
+  181: [{ formId: 10045, label: "メガシンカ" }],   // ampharos-mega
+  208: [{ formId: 10072, label: "メガシンカ" }],   // steelix-mega
+  212: [{ formId: 10046, label: "メガシンカ" }],   // scizor-mega
+  214: [{ formId: 10047, label: "メガシンカ" }],   // heracross-mega
+  227: [{ formId: 10284, label: "メガシンカ" }],   // skarmory-mega (LEGENDS Z-A)
+  229: [{ formId: 10048, label: "メガシンカ" }],   // houndoom-mega
+  248: [{ formId: 10049, label: "メガシンカ" }],   // tyranitar-mega
+  254: [{ formId: 10065, label: "メガシンカ" }],   // sceptile-mega
+  257: [{ formId: 10050, label: "メガシンカ" }],   // blaziken-mega
+  260: [{ formId: 10064, label: "メガシンカ" }],   // swampert-mega
+  282: [{ formId: 10051, label: "メガシンカ" }],   // gardevoir-mega
+  302: [{ formId: 10066, label: "メガシンカ" }],   // sableye-mega
+  303: [{ formId: 10052, label: "メガシンカ" }],   // mawile-mega
+  306: [{ formId: 10053, label: "メガシンカ" }],   // aggron-mega
+  308: [{ formId: 10054, label: "メガシンカ" }],   // medicham-mega
+  310: [{ formId: 10055, label: "メガシンカ" }],   // manectric-mega
+  319: [{ formId: 10070, label: "メガシンカ" }],   // sharpedo-mega
+  323: [{ formId: 10087, label: "メガシンカ" }],   // camerupt-mega
+  334: [{ formId: 10067, label: "メガシンカ" }],   // altaria-mega
+  354: [{ formId: 10056, label: "メガシンカ" }],   // banette-mega
+  359: [{ formId: 10057, label: "メガシンカ" }],   // absol-mega
+  362: [{ formId: 10074, label: "メガシンカ" }],   // glalie-mega
+  373: [{ formId: 10089, label: "メガシンカ" }],   // salamence-mega
+  376: [{ formId: 10076, label: "メガシンカ" }],   // metagross-mega
+  380: [{ formId: 10062, label: "メガシンカ" }],   // latias-mega
+  381: [{ formId: 10063, label: "メガシンカ" }],   // latios-mega
+  384: [{ formId: 10079, label: "メガシンカ" }],   // rayquaza-mega
+  428: [{ formId: 10088, label: "メガシンカ" }],   // lopunny-mega
+  445: [{ formId: 10058, label: "メガシンカ" }],   // garchomp-mega
+  448: [{ formId: 10059, label: "メガシンカ" }],   // lucario-mega
+  460: [{ formId: 10060, label: "メガシンカ" }],   // abomasnow-mega
+  475: [{ formId: 10068, label: "メガシンカ" }],   // gallade-mega
+  478: [{ formId: 10285, label: "メガシンカ" }],   // froslass-mega (LEGENDS Z-A)
+  500: [{ formId: 10286, label: "メガシンカ" }],   // emboar-mega (LEGENDS Z-A)
+  530: [{ formId: 10287, label: "メガシンカ" }],   // excadrill-mega (LEGENDS Z-A)
+  531: [{ formId: 10069, label: "メガシンカ" }],   // audino-mega
+  545: [{ formId: 10288, label: "メガシンカ" }],   // scolipede-mega (LEGENDS Z-A)
+  560: [{ formId: 10289, label: "メガシンカ" }],   // scrafty-mega (LEGENDS Z-A)
+  604: [{ formId: 10290, label: "メガシンカ" }],   // eelektross-mega (LEGENDS Z-A)
+  609: [{ formId: 10291, label: "メガシンカ" }],   // chandelure-mega (LEGENDS Z-A)
+  652: [{ formId: 10292, label: "メガシンカ" }],   // chesnaught-mega (LEGENDS Z-A)
+  655: [{ formId: 10293, label: "メガシンカ" }],   // delphox-mega (LEGENDS Z-A)
+  658: [{ formId: 10294, label: "メガシンカ" }],   // greninja-mega (LEGENDS Z-A)
+  668: [{ formId: 10295, label: "メガシンカ" }],   // pyroar-mega (LEGENDS Z-A)
+  687: [{ formId: 10297, label: "メガシンカ" }],   // malamar-mega (LEGENDS Z-A)
+  689: [{ formId: 10298, label: "メガシンカ" }],   // barbaracle-mega (LEGENDS Z-A)
+  691: [{ formId: 10299, label: "メガシンカ" }],   // dragalge-mega (LEGENDS Z-A)
+  701: [{ formId: 10300, label: "メガシンカ" }],   // hawlucha-mega (LEGENDS Z-A)
+  870: [{ formId: 10303, label: "メガシンカ" }],   // falinks-mega (LEGENDS Z-A)
 };
 
 const ALT_IMG_SOURCES = (formId) => [
@@ -473,25 +512,42 @@ const ALT_IMG_SOURCES = (formId) => [
   `https://cdn.jsdelivr.net/gh/PokeAPI/sprites/sprites/pokemon/other/official-artwork/${formId}.png`,
 ];
 
-function AltFormBadge({ mon, size = 40, showLabel = false }) {
-  const alt = ALT_FORMS[mon.id];
+function SingleAltBadge({ formId, name, label, size, showLabel, style }) {
   const [srcIndex, setSrcIndex] = useState(0);
-  if (!alt) return null;
-  const sources = ALT_IMG_SOURCES(alt.formId);
+  const sources = ALT_IMG_SOURCES(formId);
   if (srcIndex >= sources.length) return null;
   return (
-    <>
-      {showLabel && <div className="alt-form-badge-label">{alt.label}</div>}
+    <div className="alt-form-badge-item" style={style}>
+      {showLabel && <div className="alt-form-badge-label">{label}</div>}
       <img
         className="alt-form-badge"
         src={sources[srcIndex]}
-        alt={`${mon.name}(${alt.label})`}
-        title={alt.label}
+        alt={`${name}(${label})`}
+        title={label}
         draggable={false}
-        style={{ width: size, height: size }}
+        style={{ width: size, height: size, position: "static" }}
         onError={() => setSrcIndex((i) => i + 1)}
       />
-    </>
+    </div>
+  );
+}
+
+function AltFormBadge({ mon, size = 40, showLabel = false }) {
+  const alts = ALT_FORMS[mon.id];
+  if (!alts || alts.length === 0) return null;
+  return (
+    <div className="alt-form-badge-group">
+      {alts.map((alt) => (
+        <SingleAltBadge
+          key={alt.formId}
+          formId={alt.formId}
+          name={mon.name}
+          label={alt.label}
+          size={size}
+          showLabel={showLabel}
+        />
+      ))}
+    </div>
   );
 }
 
@@ -522,7 +578,7 @@ function PokemonCard({ mon, onPick, selected, onToggle }) {
         ) : (
           <div className="lcd-fallback">?</div>
         )}
-        <AltFormBadge mon={mon} size={36} />
+        <AltFormBadge mon={mon} size={30} />
         {selected && <div className="lcd-card-check">✓</div>}
       </div>
       <div className="lcd-card-name">{mon.name}</div>
@@ -591,7 +647,8 @@ function App() {
     : [];
 
   // ===== ワールドカップ機能 =====
-  const [wcPhase, setWcPhase] = useState(null); // null | hub | group | knockout | champion
+  const [wcPhase, setWcPhase] = useState(null); // null | hub | group | knockout | champion | repView
+  const [wcViewGen, setWcViewGen] = useState(null); // 代表確認画面でどの地方を見てるか
   const [wcReps, setWcReps] = useState({}); // { [gen]: [mon,...] | undefined }
   const [wcActiveGen, setWcActiveGen] = useState(null);
   const [wcGroups, setWcGroups] = useState([]);
@@ -647,6 +704,7 @@ function App() {
       phase,
       wcPhase,
       wcActiveGen,
+      wcViewGen,
       wcReps,
       // 通常診断 / ワールドカップ予選で共通して使う対戦state
       currentRound,
@@ -690,6 +748,7 @@ function App() {
     setWinner(null);
     setWcChampion(null);
     setWcActiveGen(null);
+    setWcViewGen(null);
     setWcPhase(null);
     setPhase("title");
   };
@@ -706,6 +765,7 @@ function App() {
     setMode(saved.mode || "all");
     setSelectedGen(saved.selectedGen || 1);
     setWcActiveGen(saved.wcActiveGen || null);
+    setWcViewGen(saved.wcViewGen || null);
     setWcReps(saved.wcReps || {});
     setWcGroups(saved.wcGroups || []);
     setWcGroupIndex(saved.wcGroupIndex || 0);
@@ -1229,6 +1289,52 @@ function App() {
         .theme-ds .gb-dpad::after { background: #1a1d24; }
         .theme-ds .gb-ab span { background: #3daaff; box-shadow: 0 3px 0 #1c72c2; }
 
+        /* イッシュ(第5世代): シンオウと同じ画面構成だが、青緑系の配色で差別化 */
+        .theme-ds2 .gb-body {
+          background: linear-gradient(160deg, #eef6f3, #b9d6cc);
+          border-radius: 20px 20px 44px 44px;
+        }
+        .theme-ds2 .gb-brand { color: #3f6b5c; }
+        .theme-ds2 .gb-screen-bezel { background: #10231c; }
+        .theme-ds2 .gb-screen {
+          background: #f4fbf8;
+          box-shadow: inset 0 0 0 3px #163b2e;
+        }
+        .theme-ds2 .gb-screen.flash::after { background: #163b2e; }
+        .theme-ds2 .lcd-header,
+        .theme-ds2 .title-wrap h1,
+        .theme-ds2 .result-wrap h2,
+        .theme-ds2 .result-name,
+        .theme-ds2 .ranking-rank,
+        .theme-ds2 .ranking-name,
+        .theme-ds2 .lcd-card-name { color: #163b2e; }
+        .theme-ds2 .title-wrap p,
+        .theme-ds2 .gen-status { color: #4c7566; }
+        .theme-ds2 .lcd-header { border-bottom-color: #a9cabd; }
+        .theme-ds2 .lcd-card { background: #e4f2ec; border-color: #163b2e; }
+        .theme-ds2 .lcd-card:active { background: #cfe6db; }
+        .theme-ds2 .skip-btn { border-color: #4c7566; color: #4c7566; }
+        .theme-ds2 .skip-hint { color: #3f6b5c; }
+        .theme-ds2 .gb-button,
+        .theme-ds2 .back-btn {
+          background: #1f5a45;
+          color: #ffffff;
+          box-shadow: 0 3px 0 #0f2e22;
+        }
+        .theme-ds2 .mode-btn { background: #e4f2ec; color: #4c7566; border-color: #4c7566; }
+        .theme-ds2 .mode-btn.active { background: #1f5a45; color: #ffffff; border-color: #1f5a45; }
+        .theme-ds2 .gen-row { background: #e4f2ec; border-color: #4c7566; color: #163b2e; }
+        .theme-ds2 .gen-row.selected { background: #1f5a45; color: #ffffff; }
+        .theme-ds2 .gen-row.selected .gen-status { color: #ffffff; }
+        .theme-ds2 .ranking-row { background: #e4f2ec; border-color: #163b2e; }
+        .theme-ds2 .gb-dpad::before,
+        .theme-ds2 .gb-dpad::after { background: #10231c; }
+        .theme-ds2 .gb-ab span { background: #e8a33d; box-shadow: 0 3px 0 #a86f1f; }
+
+        .theme-ds2 .ds-hinge { background: linear-gradient(to bottom, #b7ccc2, #7fa393); }
+        .theme-ds2 .ds-bottom-screen-bezel { background: #10231c; }
+        .theme-ds2 .ds-bottom-screen { background: #f4fbf8; box-shadow: inset 0 0 0 3px #163b2e; }
+
         .ds-hinge {
           height: 10px;
           margin: 4px 14px;
@@ -1551,6 +1657,21 @@ function App() {
           font-size: 12px;
           letter-spacing: 1px;
           cursor: pointer;
+          position: relative;
+        }
+        .mode-badge {
+          position: absolute;
+          top: -9px;
+          right: -6px;
+          background: #e8503a;
+          color: #ffffff;
+          font-size: 8px;
+          font-family: 'DotGothic16', sans-serif;
+          padding: 2px 5px;
+          border-radius: 8px;
+          letter-spacing: 0.5px;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+          white-space: nowrap;
         }
         .mode-btn.active {
           background: #0f380f;
@@ -1639,10 +1760,15 @@ function App() {
         }
         .confirm-btn:disabled { opacity: 0.4; cursor: default; }
         .confirm-btn:not(:disabled):active { background: #306230; }
-        .alt-form-badge {
+        .alt-form-badge-group {
           position: absolute;
           right: -4px;
           bottom: -4px;
+          display: flex;
+          gap: 2px;
+        }
+        .alt-form-badge-item { position: relative; display: flex; flex-direction: column; align-items: center; }
+        .alt-form-badge {
           object-fit: contain;
           image-rendering: pixelated;
           filter: drop-shadow(0 2px 2px rgba(15,56,15,0.45));
@@ -1705,12 +1831,10 @@ function App() {
         }
         .result-img-wrap { position: relative; display: inline-block; width: 65%; }
         .result-img { width: 100%; filter: drop-shadow(0 6px 6px rgba(15,56,15,0.4)); }
-        .result-img-wrap .alt-form-badge { right: -4%; top: -6%; bottom: auto; }
+        .result-img-wrap .alt-form-badge-group { right: -4%; top: -6%; bottom: auto; }
         .alt-form-badge-label {
-          position: absolute;
-          top: -6%;
-          right: -4%;
-          transform: translateY(-100%);
+          position: static;
+          transform: none;
           font-family: 'DotGothic16', sans-serif;
           font-size: 9px;
           color: #0f380f;
@@ -1719,6 +1843,8 @@ function App() {
           border-radius: 4px;
           padding: 1px 4px;
           white-space: nowrap;
+          text-align: center;
+          margin-bottom: 2px;
         }
         .result-name {
           font-family: 'DotGothic16', sans-serif;
@@ -1995,6 +2121,7 @@ function App() {
                     onClick={() => setMode("final")}
                   >
                     最終進化のみ
+                    <span className="mode-badge">オススメ</span>
                   </button>
                 </div>
                 <button className="gb-button" onClick={start}>
@@ -2041,12 +2168,19 @@ function App() {
                       <button
                         key={g.gen}
                         className={`gen-row ready${done ? " selected" : ""}`}
-                        onClick={() => startWcPrelim(g.gen)}
+                        onClick={() => {
+                          if (done) {
+                            setWcViewGen(g.gen);
+                            setWcPhase("repView");
+                          } else {
+                            startWcPrelim(g.gen);
+                          }
+                        }}
                       >
                         <span className="gen-num">第{g.gen}世代</span>
                         <span className="gen-region">{g.region}</span>
                         <span className="gen-status">
-                          {done ? `代表${g.repSlots}匹決定` : "未選出"}
+                          {done ? `代表${g.repSlots}匹決定 ▶` : "未選出"}
                         </span>
                       </button>
                     );
@@ -2059,6 +2193,36 @@ function App() {
                   style={!wcAllRepsReady ? { opacity: 0.4 } : undefined}
                 >
                   決勝ラウンドへ(32匹)
+                </button>
+              </div>
+            )}
+
+            {phase === "wc" && wcPhase === "repView" && wcViewGen && (
+              <div className="wc-hub">
+                <div className="lcd-header">
+                  <button className="back-btn" onClick={() => setWcPhase("hub")}>
+                    ◀ もどる
+                  </button>
+                  <span>
+                    {GENERATIONS.find((g) => g.gen === wcViewGen)?.region}の代表
+                  </span>
+                </div>
+                <div className="ranking-list">
+                  {(wcReps[wcViewGen] || []).map((mon, i) => (
+                    <div className="ranking-row" key={mon.id + "-" + i}>
+                      <div className="ranking-rank">{i + 1}</div>
+                      <div className="ranking-thumb">
+                        <ResultImage mon={mon} />
+                      </div>
+                      <div className="ranking-name">{mon.name}</div>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  className="gb-button small"
+                  onClick={() => startWcPrelim(wcViewGen)}
+                >
+                  この地方の予選をやり直す
                 </button>
               </div>
             )}
@@ -2248,10 +2412,10 @@ function App() {
             )}
           </div>
         </div>
-        {currentTheme === "ds" && (
+        {(currentTheme === "ds" || currentTheme === "ds2") && (
           <div className="ds-hinge" />
         )}
-        {currentTheme === "ds" && (
+        {(currentTheme === "ds" || currentTheme === "ds2") && (
           <div className="ds-bottom-screen-bezel">
             <div className="ds-bottom-screen">
               {phase === "title" && (
@@ -2342,6 +2506,14 @@ function App() {
               {phase === "wc" && (wcPhase === "group" || wcPhase === "knockout") && (
                 <div className="ds-touch-deco">✎ タッチスクリーン</div>
               )}
+              {phase === "wc" && wcPhase === "repView" && (
+                <>
+                  <div className="ds-touch-label">タッチスクリーン</div>
+                  <button className="ds-touch-btn" onClick={() => setWcPhase("hub")}>
+                    ◀ もどる
+                  </button>
+                </>
+              )}
               {phase === "wc" && wcPhase === "champion" && (
                 <>
                   <div className="ds-touch-label">タッチスクリーン</div>
@@ -2383,7 +2555,7 @@ function App() {
               <span className="jc-small-btn jc-plus">＋</span>
             </div>
           </div>
-        ) : currentTheme === "ds" || currentTheme === "3ds" ? (
+        ) : currentTheme === "ds" || currentTheme === "ds2" || currentTheme === "3ds" ? (
           <div className="gb-dpad-row">
             <div className="gb-dpad" />
             <div className="face-buttons">
