@@ -616,6 +616,72 @@ function ResultImage({ mon }) {
   );
 }
 
+const SHARE_HASHTAG = "#好きなポケモン診断";
+
+// X / LINE / その他(スマホの共有メニュー、非対応ならコピー)の共有ボタン列。
+// URLは公開先が変わっても追従するよう現在のページから作る
+function ShareButtons({ text }) {
+  const [notice, setNotice] = useState("");
+  const url = window.location.origin + window.location.pathname;
+  const body = `${text}\n${SHARE_HASHTAG}`;
+  const openWindow = (href) => window.open(href, "_blank", "noopener,noreferrer");
+
+  const shareX = () =>
+    openWindow(
+      "https://twitter.com/intent/tweet?text=" +
+        encodeURIComponent(body) +
+        "&url=" +
+        encodeURIComponent(url)
+    );
+  const shareLine = () =>
+    openWindow("https://line.me/R/share?text=" + encodeURIComponent(`${body}\n${url}`));
+  const shareOther = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ text: body, url });
+      } catch (e) {
+        // キャンセル時は何もしない
+      }
+      return;
+    }
+    const copyText = `${body}\n${url}`;
+    let copied = false;
+    try {
+      await navigator.clipboard.writeText(copyText);
+      copied = true;
+    } catch (e) {
+      // 古いブラウザや権限がない場合は選択してコピーする方法で再挑戦
+      const ta = document.createElement("textarea");
+      ta.value = copyText;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        copied = document.execCommand("copy");
+      } catch (e2) {
+        copied = false;
+      }
+      document.body.removeChild(ta);
+    }
+    setNotice(copied ? "コピーしました" : "コピーできませんでした");
+    setTimeout(() => setNotice(""), 2000);
+  };
+
+  return (
+    <div className="share-wrap">
+      <div className="share-row">
+        <button className="share-btn share-x" onClick={shareX}>𝕏 ポスト</button>
+        <button className="share-btn share-line" onClick={shareLine}>LINE</button>
+        <button className="share-btn share-other" onClick={shareOther}>
+          {navigator.share ? "その他" : "コピー"}
+        </button>
+      </div>
+      {notice && <div className="share-notice">{notice}</div>}
+    </div>
+  );
+}
+
 const GROUP_SIZE = 4;
 const MAX_PICKS = 2; // 1回に勝ち進ませられる最大数
 const FINAL_AUTO_THRESHOLD = 3; // 残りがこの数以下になったら選ばれた回数で自動決着
@@ -1146,6 +1212,17 @@ function App() {
   const currentTheme =
     GENERATIONS.find((g) => g.gen === selectedGen)?.theme || "gb";
 
+  const regionOf = (gen) => GENERATIONS.find((g) => g.gen === gen)?.region;
+  // 遊び終えた地方の1位(代表の先頭)をまとめた共有文。1地方だけでも作れる
+  const regionTopsText = () =>
+    "私の地方別No.1ポケモン\n" +
+    GENERATIONS.filter((g) => wcReps[g.gen] && wcReps[g.gen].length > 0)
+      .map((g) => `${g.region}:${wcReps[g.gen][0].name}`)
+      .join("\n");
+  const repListText = (gen) =>
+    `私の好きな${regionOf(gen)}ポケモンTOP${(wcReps[gen] || []).length}\n` +
+    (wcReps[gen] || []).map((mon, i) => `${i + 1}.${mon.name}`).join(" ");
+
   return (
     <div className={`gb-outer theme-${currentTheme}`}>
       <style>{`
@@ -1155,11 +1232,21 @@ function App() {
         .gb-outer {
           min-height: 100vh;
           display: flex;
+          flex-direction: column;
           align-items: center;
           justify-content: center;
           background: radial-gradient(ellipse at top, #4a4d43, #1c1e18);
           padding: 20px 12px;
           font-family: 'Zen Maru Gothic', sans-serif;
+        }
+        .site-disclaimer {
+          width: 100%;
+          max-width: 380px;
+          margin: 14px 0 0;
+          color: #a9ab9e;
+          font-size: 10px;
+          line-height: 1.6;
+          text-align: center;
         }
         .gb-body {
           width: 100%;
@@ -1362,48 +1449,6 @@ function App() {
           border-radius: 4px;
           box-shadow: inset 0 0 0 3px #232733;
           min-height: 90px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          padding: 10px;
-        }
-        .ds-touch-label {
-          font-family: 'DotGothic16', sans-serif;
-          font-size: 10px;
-          color: #9aa2b1;
-          letter-spacing: 1px;
-        }
-        .ds-touch-row {
-          display: flex;
-          gap: 8px;
-          flex-wrap: wrap;
-          justify-content: center;
-        }
-        .ds-touch-btn {
-          font-family: 'DotGothic16', sans-serif;
-          background: #eef0f4;
-          color: #232733;
-          border: 2px solid #232733;
-          border-radius: 8px;
-          padding: 8px 14px;
-          font-size: 11px;
-          letter-spacing: 0.5px;
-          cursor: pointer;
-        }
-        .ds-touch-btn:active:not(:disabled) { background: #cfd6e2; }
-        .ds-touch-btn:disabled { opacity: 0.4; cursor: default; }
-        .ds-touch-primary {
-          background: #232733;
-          color: #ffffff;
-        }
-        .ds-touch-primary:active:not(:disabled) { background: #3daaff; }
-        .ds-touch-deco {
-          font-family: 'DotGothic16', sans-serif;
-          font-size: 12px;
-          color: #c3c8d1;
-          letter-spacing: 1px;
         }
 
         /* ニンテンドー3DS風テーマ(第六・七世代) */
@@ -1623,18 +1668,6 @@ function App() {
           margin: 0;
         }
         .title-controls {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 8px;
-          width: 100%;
-        }
-        /* DS系テーマは操作系を下のタッチ画面にまとめるので、上画面側は隠す */
-        .theme-ds .title-controls,
-        .theme-ds2 .title-controls {
-          display: none;
-        }
-        .ds-touch-title-controls {
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -1893,6 +1926,45 @@ function App() {
           font-size: 12px;
         }
         .wc-entry { margin-top: 6px; }
+        .share-wrap {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 4px;
+        }
+        .share-row {
+          display: flex;
+          gap: 6px;
+          justify-content: center;
+          flex-wrap: wrap;
+        }
+        .share-btn {
+          font-family: 'DotGothic16', sans-serif;
+          color: #ffffff;
+          border: none;
+          border-radius: 999px;
+          padding: 8px 14px;
+          font-size: 12px;
+          letter-spacing: 1px;
+          cursor: pointer;
+          box-shadow: 0 3px 0 rgba(0,0,0,0.35);
+        }
+        .share-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.35); }
+        .share-x { background: #000000; }
+        .share-line { background: #06c755; }
+        .share-other { background: #5a6170; }
+        .share-notice {
+          font-family: 'DotGothic16', sans-serif;
+          font-size: 11px;
+          color: #306230;
+        }
+        .share-label {
+          font-family: 'DotGothic16', sans-serif;
+          font-size: 11px;
+          color: #306230;
+          text-align: center;
+          margin-top: 4px;
+        }
 
         .wc-hub {
           flex: 1;
@@ -2093,7 +2165,7 @@ function App() {
 
         /* PCなど横幅が広い画面向け: 本体を横に広げてカードも2列表示にする */
         @media (min-width: 700px) {
-          .gb-body { max-width: 640px; }
+          .gb-body, .site-disclaimer { max-width: 640px; }
           .vs-wrap {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -2227,6 +2299,12 @@ function App() {
                 >
                   決勝ラウンドへ(32匹)
                 </button>
+                {wcDoneCount > 0 && (
+                  <>
+                    <div className="share-label">地方別No.1をシェア（{wcDoneCount}地方）</div>
+                    <ShareButtons text={regionTopsText()} />
+                  </>
+                )}
               </div>
             )}
 
@@ -2251,6 +2329,7 @@ function App() {
                     </div>
                   ))}
                 </div>
+                <ShareButtons text={repListText(wcViewGen)} />
                 <button
                   className="gb-button small"
                   onClick={() => startWcPrelim(wcViewGen)}
@@ -2316,6 +2395,9 @@ function App() {
                 <h2>ワールドチャンピオンは…</h2>
                 <ResultImage mon={wcChampion} />
                 <div className="result-name">{wcChampion.name}</div>
+                <ShareButtons
+                  text={`ポケモン地方別ワールドカップ、私の優勝は「${wcChampion.name}」でした！`}
+                />
                 <button className="gb-button small" onClick={openWcHub}>
                   ハブへ戻る
                 </button>
@@ -2381,6 +2463,9 @@ function App() {
                 <h2>あなたの一番好きなポケモンは…</h2>
                 <ResultImage mon={winner} />
                 <div className="result-name">{winner.name}</div>
+                <ShareButtons
+                  text={`私の一番好きなポケモンは「${winner.name}」でした！（${regionOf(wcActiveGen || selectedGen)}編）`}
+                />
                 {wcActiveGen ? (
                   <div className="result-btn-row">
                     <button className="gb-button small" onClick={() => setPhase("ranking")}>
@@ -2450,133 +2535,7 @@ function App() {
         )}
         {(currentTheme === "ds" || currentTheme === "ds2") && (
           <div className="ds-bottom-screen-bezel">
-            <div className="ds-bottom-screen">
-              {phase === "title" && (
-                <div className="ds-touch-title-controls">
-                  <div className="mode-toggle">
-                    <button
-                      className={`mode-btn${mode === "all" ? " active" : ""}`}
-                      onClick={() => setMode("all")}
-                    >
-                      全{GENERATIONS.find((g) => g.gen === selectedGen)?.count}匹
-                    </button>
-                    <button
-                      className={`mode-btn${mode === "final" ? " active" : ""}`}
-                      onClick={() => setMode("final")}
-                    >
-                      最終進化のみ
-                      <span className="mode-badge">オススメ</span>
-                    </button>
-                  </div>
-                  <button className="ds-touch-btn ds-touch-primary" onClick={start}>
-                    ▶ スタート({GENERATIONS.find((g) => g.gen === selectedGen)?.region})
-                  </button>
-                  {hasSavedGame && (
-                    <button className="ds-touch-btn" onClick={resumeProgress}>
-                      ▶ 続きから再開する
-                    </button>
-                  )}
-                  <button className="ds-touch-btn" onClick={openWcHub}>
-                    🏆 ワールドカップ
-                  </button>
-                </div>
-              )}
-              {phase === "battle" && (
-                <>
-                  <div className="ds-touch-row">
-                    <button
-                      className="ds-touch-btn"
-                      onClick={handleBack}
-                      disabled={history.length === 0}
-                    >
-                      ◀ もどる
-                    </button>
-                    <button
-                      className="ds-touch-btn ds-touch-primary"
-                      onClick={confirmPick}
-                      disabled={pickedIds.length === 0}
-                    >
-                      ✓ 決定({pickedIds.length})
-                    </button>
-                    <button className="ds-touch-btn" onClick={handleSkip}>
-                      ✕ どれも好きじゃない
-                    </button>
-                  </div>
-                </>
-              )}
-              {phase === "result" && (
-                <>
-                  <div className="ds-touch-row">
-                    <button className="ds-touch-btn" onClick={() => setPhase("ranking")}>
-                      ランキング
-                    </button>
-                    {wcActiveGen ? (
-                      <button className="ds-touch-btn ds-touch-primary" onClick={saveWcRep}>
-                        代表を保存
-                      </button>
-                    ) : (
-                      <button className="ds-touch-btn ds-touch-primary" onClick={start}>
-                        もう一度
-                      </button>
-                    )}
-                  </div>
-                  <button className="ds-touch-btn" onClick={goToTitle}>
-                    ■ メインメニューへ
-                  </button>
-                </>
-              )}
-              {phase === "ranking" && (
-                <>
-                  <div className="ds-touch-row">
-                    <button className="ds-touch-btn" onClick={() => setPhase("result")}>
-                      ◀ もどる
-                    </button>
-                    <button className="ds-touch-btn ds-touch-primary" onClick={start}>
-                      もう一度
-                    </button>
-                  </div>
-                  <button className="ds-touch-btn" onClick={goToTitle}>
-                    ■ メインメニューへ
-                  </button>
-                </>
-              )}
-              {phase === "wc" && wcPhase === "hub" && (
-                <>
-                  <button
-                    className="ds-touch-btn ds-touch-primary"
-                    onClick={startGroupStage}
-                    disabled={!wcAllRepsReady}
-                  >
-                    ▶ 決勝ラウンドへ
-                  </button>
-                  <button className="ds-touch-btn" onClick={goToTitle}>
-                    ■ メインメニューへ
-                  </button>
-                </>
-              )}
-              {phase === "wc" && (wcPhase === "group" || wcPhase === "knockout") && (
-                <div className="ds-touch-deco">✎ タッチスクリーン</div>
-              )}
-              {phase === "wc" && wcPhase === "repView" && (
-                <>
-                  <button className="ds-touch-btn" onClick={() => setWcPhase("hub")}>
-                    ◀ もどる
-                  </button>
-                </>
-              )}
-              {phase === "wc" && wcPhase === "champion" && (
-                <>
-                  <div className="ds-touch-row">
-                    <button className="ds-touch-btn" onClick={openWcHub}>
-                      ハブへ
-                    </button>
-                    <button className="ds-touch-btn ds-touch-primary" onClick={goToTitle}>
-                      メインメニューへ
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
+            <div className="ds-bottom-screen" aria-hidden="true" />
           </div>
         )}
         {currentTheme === "switch" ? (
@@ -2632,6 +2591,10 @@ function App() {
           </div>
         )}
       </div>
+      <p className="site-disclaimer">
+        当サイトは非公式のファンサイトです。任天堂・株式会社ポケモン・ゲームフリーク・クリーチャーズとは一切関係ありません。
+        ポケモンの名称・画像の権利は各権利者に帰属します。画像出典: PokeAPI
+      </p>
     </div>
   );
 }

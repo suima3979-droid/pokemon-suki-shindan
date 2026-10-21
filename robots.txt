@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://suima3979-droid.github.io/pokemon-suki-shindan/sitemap.xml
